@@ -16,6 +16,7 @@
         <folder>renderer</folder>
         <folder>vendor</folder>
         <folder>config</folder>
+        <folder>src</folder>
     </files>
     <config>
         <fields name="params">
