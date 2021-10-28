@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<applications>
+    <application group="all">
+        <params group="application-config">
+            <param name="algolia_app_id" type="text" description="Algolia Application Id" label="Algolia App Id" default="" />
+            <param name="algolia_search_key" type="text" description="Algolia Search Key" label="Algolia Search Key" default="" />
+            <param name="algolia_secret_key" type="text" description="Algolia Secret Key" label="Algolia Secret Key" default="" />
+            <param name="algolia_index" type="text" description="Algolia Index name" label="Algolia Index Name" default="" />
+        </params>
+    </application>
+</applications>

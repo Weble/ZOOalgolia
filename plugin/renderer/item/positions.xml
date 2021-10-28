@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<renderer>
+  <positions layout="algolia">
+    <position name="search">Search</position>
+  </positions>
+</renderer>

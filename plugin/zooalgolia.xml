@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="system" method="upgrade" version="3.0">
+    <name>ZOO - Algolia Integration</name>
+    <version>2.0.1</version>
+    <creationDate>October 2021</creationDate>
+    <copyright>(C) 2021 Weble Srl</copyright>
+    <license>GNU GPLv2 or later</license>
+    <author>Weble Srl</author>
+    <authorEmail>daniele@weble.it</authorEmail>
+    <authorUrl>https://weble.it</authorUrl>
+    <description>Algolia Integration for ZOO</description>
+    <element>zooalgolia</element>
+    <scriptfile>install.php</scriptfile>
+    <files>
+        <filename plugin="zooalgolia">zooalgolia.php</filename>
+        <folder>renderer</folder>
+        <folder>vendor</folder>
+        <folder>config</folder>
+    </files>
+    <config>
+        <fields name="params">
+            <fieldset name="basic">
+            </fieldset>
+        </fields>
+    </config>
+</extension>

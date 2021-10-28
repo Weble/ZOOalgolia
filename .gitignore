@@ -1,0 +1,6 @@
+.idea
+.DS_Store
+plugin/vendor
+build/*
+plugin/renderer/item/positions.config
+plugin/composer.lock
