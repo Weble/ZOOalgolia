@@ -37,7 +37,7 @@ class AlgoliaSyncCommand extends Command
             $applications = $zoo->table->application->all();
         }
 
-        $type = $input->getOption('type');
+        //$type = $input->getOption('type');
 
         $ids = $input->getOption('ids');
         if ($ids) {
@@ -45,36 +45,41 @@ class AlgoliaSyncCommand extends Command
         }
 
         foreach ($applications as $application) {
-            $algoliaSync = new AlgoliaSync($application);
-            if (!$algoliaSync->isConfigured()) {
-                continue;
-            }
+            foreach ($application->getTypes() as $app_type) {
 
-            $output->writeln('Import Items from ' . $application->name);
-
-            /** @var Item[] $items */
-            if ($ids) {
-                $items = $zoo->table->item->all(['conditions' => 'application_id = ' . $application->id . ' AND id IN ( ' . implode(",", $ids) . ')']);
-                $total = count($items);
-            } else {
-                $items = $zoo->table->item->findAll($application->id);
-                $total = $application->getItemCount();
-            }
-
-
-            $progress = new ProgressBar($output, $total);
-
-            foreach ($items as $item) {
-
-                if ($type !== null && $type !== $item->getType()->id) {
+                $algoliaSync = new AlgoliaSync($app_type);
+                if (!$algoliaSync->isConfigured()) {
                     continue;
                 }
 
-                $progress->advance();
-                $algoliaSync->sync($item);
+                $output->writeln('Import Items from ' . $application->name . ' of type ' . $app_type->getName());
+
+                /** @var Item[] $items */
+                if ($ids) {
+                    $items = $zoo->table->item->all(['conditions' => 'type = ' . $app_type->identifier . ' AND id IN ( ' . implode(",", $ids) . ')']);
+                    $total = count($items);
+                } else {
+                    //$items = $zoo->table->item->findAll($application->id);
+                    $items =  $zoo->table->item->getByType($app_type->identifier, $application->id);
+                    $total = count($items);
+                }
+
+                $progress = new ProgressBar($output, $total);
+
+                foreach ($items as $item) {
+
+                    /*if ($type !== null && $type !== $item->getType()->id) {
+                        continue;
+                    }*/
+
+                    $progress->advance();
+                    $algoliaSync->sync($item);
+                }
+
+                $progress->finish();
+
             }
 
-            $progress->finish();
         }
 
         return 0;

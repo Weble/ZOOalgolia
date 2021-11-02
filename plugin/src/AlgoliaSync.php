@@ -28,22 +28,25 @@ class AlgoliaSync
     private array $categories = [];
     private Application $application;
 
-    public function __construct(\Application $application)
+    public function __construct(\Type $type)
     {
-        $this->application = $application;
-        $this->zoo = $application->app;
+        $this->application = $type->getApplication();
+
+
+        $this->zoo = $this->application->app;
         $this->renderer = $this->zoo->renderer->create('item', ['path' => $this->zoo->path]);
 
-        if ($application->getParams()->get('global.config.algolia_app_id') && $application->getParams()->get('global.config.algolia_app_id')) {
+        if ($this->application->getParams()->get('global.config.algolia_app_id') && $this->application->getParams()->get('global.config.algolia_app_id')) {
             $this->client = SearchClient::create(
-                $application->getParams()->get('global.config.algolia_app_id'),
-                $application->getParams()->get('global.config.algolia_secret_key')
+                $this->application->getParams()->get('global.config.algolia_app_id'),
+                $this->application->getParams()->get('global.config.algolia_secret_key')
             );
         }
 
-        if ($this->client && $application->getParams()->get('global.config.algolia_index')) {
-            $this->index = $this->client->initIndex($application->getParams()->get('global.config.algolia_index'));
+        if ($this->client && $this->application->getParams()->get('global.config.algolia_index_'. $type->identifier)) {
+            $this->index = $this->client->initIndex($this->application->getParams()->get('global.config.algolia_index_'. $type->identifier));
         }
+
     }
 
     public function isConfigured(): bool
