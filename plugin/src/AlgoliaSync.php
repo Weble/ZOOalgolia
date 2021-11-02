@@ -133,6 +133,13 @@ class AlgoliaSync
         /** @var Type $type */
         $type = $item->getType();
 
+        $config = new Registry($this->renderer->getConfig('root:plugins/system/zooalgolia/renderer/item')->get($application->getGroup() . '.' . $type->identifier . '.algolia'));
+        $config = $config->get('search', []);
+
+        if (!count($config)) {
+            return null;
+        }
+
         $this->categories = $application->getCategoryTree();
         $data = [
             'id'  => $item->id,
@@ -155,9 +162,6 @@ class AlgoliaSync
             $data['url'][$lang] = $this->getItemUrls($item, $lang);
         };
 
-
-        $config = new Registry($this->renderer->getConfig('root:plugins/system/zooalgolia/renderer/item')->get($application->getGroup() . '.' . $type->identifier . '.algolia'));
-        $config = $config->get('search', []);
         foreach ($config as $elementConfig) {
             $element = $item->getElement($elementConfig['element']);
 
@@ -305,6 +309,23 @@ class AlgoliaSync
             }
 
             return $values ? array_shift($values) : null;
+        }
+
+        if ($element instanceof \ElementRelatedItemsPro) {
+            $related_items = $element->getRelatedItems(true);
+
+            $items = [];
+
+            foreach ($related_items as $item)
+            {
+                $data = $this->algoliaData($item);
+                if ($data) {
+                    $items[] = $this->algoliaData(($item));
+                }
+            }
+
+           return $items;
+
         }
 
         if ($element instanceof \ElementOption) {
