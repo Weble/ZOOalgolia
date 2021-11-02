@@ -188,11 +188,20 @@ class AlgoliaSync
             }
         }
 
+        $this->zoo->event->dispatcher->notify($this->zoo->event->create($item, 'algolia:data', ['data' => &$data]));
+
         return $data;
     }
 
     private function elementValueFor(\Element $element, array $params)
     {
+        $value = null;
+        $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:beforeelementdata', ['value' => &$value]));
+
+        if ($value !== null) {
+            return $value;
+        }
+
         if ($element instanceof \ElementItemName) {
             return $element->getItem()->name;
         }
@@ -337,7 +346,10 @@ class AlgoliaSync
             return $value;
         }
 
-        return null;
+        $value = null;
+        $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:elementdata', ['value' => &$value]));
+
+        return $value;
     }
 
     protected function findMenuItem($type, $id, $lang)
