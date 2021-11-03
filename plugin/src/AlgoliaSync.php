@@ -124,7 +124,7 @@ class AlgoliaSync
         return $this->index->deleteObject($item->id)->valid();
     }
 
-    private function algoliaData(\Item $item): ?array
+    private function algoliaData(\Item $item, $full_related_data = true): ?array
     {
         if (!$item->isPublished()) {
             return null;
@@ -178,7 +178,7 @@ class AlgoliaSync
                 $key = $elementConfig['altlabel'];
             }
 
-            $value = $this->elementValueFor($element, $elementConfig);
+            $value = $this->elementValueFor($element, $elementConfig, $full_related_data);
 
             $data[$key] = $value;
 
@@ -200,7 +200,7 @@ class AlgoliaSync
         return $data;
     }
 
-    private function elementValueFor(\Element $element, array $params)
+    private function elementValueFor(\Element $element, array $params, $full_related_data = true)
     {
         $value = null;
         $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:beforeelementdata', ['value' => &$value]));
@@ -258,6 +258,7 @@ class AlgoliaSync
             return $data;
         }
 
+
         if ($element instanceof \ElementFilesPro) {
 
             if (!$element->data()) {
@@ -314,16 +315,23 @@ class AlgoliaSync
             return $values ? array_shift($values) : null;
         }
 
-        if ($element instanceof \ElementRelatedItemsPro) {
-            $related_items = $element->getRelatedItems(true);
 
+        if ($element instanceof \ElementRelatedItemsPro) {
+
+            $related_items = $element->getRelatedItems(true);
             $items = [];
 
-            foreach ($related_items as $item)
-            {
-                $data = $this->algoliaData($item);
+            foreach ($related_items as $item) {
+
+                if ($full_related_data) {
+                    $data = $this->algoliaData($item, false);
+                } else {
+                    $data = [];
+                    $data['id'] = $item->id;
+                }
+
                 if ($data) {
-                    $items[] = $this->algoliaData(($item));
+                    $items[] = $data;
                 }
             }
 
@@ -348,6 +356,7 @@ class AlgoliaSync
             ];
         }
 
+
         if ($element instanceof \ElementRepeatable) {
 
             $values = array_filter(array_map(function ($item) {
@@ -361,6 +370,7 @@ class AlgoliaSync
 
             return array_shift($values);
         }
+
 
         if ($element instanceof \ElementItemTag) {
             return $element->getItem()->getTags();

@@ -51,8 +51,7 @@ class AlgoliaSyncCommand extends Command
                 if (!$algoliaSync->isConfigured()) {
                     continue;
                 }
-
-                $output->writeln('Import Items from ' . $application->name . ' of type ' . $app_type->getName());
+                $output->writeln("\nImport Items from " . $application->name . " of type " . $app_type->getName());
 
                 /** @var Item[] $items */
                 if ($ids) {
