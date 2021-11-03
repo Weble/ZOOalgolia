@@ -74,7 +74,7 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
         /** @var \Item $item */
         $item = $event->getSubject();
 
-        $algoliaSync = new AlgoliaSync($item->getApplication());
+        $algoliaSync = new AlgoliaSync($item->getType());
         $algoliaSync->sync($item);
     }
 
@@ -83,7 +83,7 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
         /** @var \Item $item */
         $item = $event->getSubject();
 
-        $algoliaSync = new AlgoliaSync($item->getApplication());
+        $algoliaSync = new AlgoliaSync($item->getType());
         $algoliaSync->batchDelete([$event->getSubject()->id]);
     }
 
@@ -197,10 +197,28 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
 
                     // Add the parameters for this group
                     foreach ($param->param as $p) {
+
                         // If it doesn't exists already
                         if (!count($ops->xpath("param[@name='" . $p->attributes()->name . "']"))) {
+
                             // Push changes with default
                             $p->attributes()->default = $this->params->get($p->attributes()->name, $p->attributes()->default);
+                            $this->appendChild($ops, $p);
+                            $app_file_changed = true;
+                        }
+
+                    }
+
+                    foreach ($app->getTypes() as $type) {
+                        if (!count($ops->xpath("param[@name='algolia_index_" . $type->identifier . "']"))) {
+
+                            $p = new SimpleXMLElement('<param></param>');
+                            $p->addAttribute('name', 'algolia_index_' . $type->identifier);
+                            $p->addAttribute('type', 'text');
+                            $p->addAttribute('label', 'Algolia Index for '. $type->name);
+                            $p->addAttribute('description', '');
+                            $p->addAttribute('default', '');
+
                             $this->appendChild($ops, $p);
                             $app_file_changed = true;
                         }

@@ -28,22 +28,25 @@ class AlgoliaSync
     private array $categories = [];
     private Application $application;
 
-    public function __construct(\Application $application)
+    public function __construct(\Type $type)
     {
-        $this->application = $application;
-        $this->zoo = $application->app;
+        $this->application = $type->getApplication();
+
+
+        $this->zoo = $this->application->app;
         $this->renderer = $this->zoo->renderer->create('item', ['path' => $this->zoo->path]);
 
-        if ($application->getParams()->get('global.config.algolia_app_id') && $application->getParams()->get('global.config.algolia_app_id')) {
+        if ($this->application->getParams()->get('global.config.algolia_app_id') && $this->application->getParams()->get('global.config.algolia_app_id')) {
             $this->client = SearchClient::create(
-                $application->getParams()->get('global.config.algolia_app_id'),
-                $application->getParams()->get('global.config.algolia_secret_key')
+                $this->application->getParams()->get('global.config.algolia_app_id'),
+                $this->application->getParams()->get('global.config.algolia_secret_key')
             );
         }
 
-        if ($this->client && $application->getParams()->get('global.config.algolia_index')) {
-            $this->index = $this->client->initIndex($application->getParams()->get('global.config.algolia_index'));
+        if ($this->client && $this->application->getParams()->get('global.config.algolia_index_'. $type->identifier)) {
+            $this->index = $this->client->initIndex($this->application->getParams()->get('global.config.algolia_index_'. $type->identifier));
         }
+
     }
 
     public function isConfigured(): bool
@@ -121,7 +124,7 @@ class AlgoliaSync
         return $this->index->deleteObject($item->id)->valid();
     }
 
-    private function algoliaData(\Item $item): ?array
+    private function algoliaData(\Item $item, $full_related_data = true): ?array
     {
         if (!$item->isPublished()) {
             return null;
@@ -175,7 +178,7 @@ class AlgoliaSync
                 $key = $elementConfig['altlabel'];
             }
 
-            $value = $this->elementValueFor($element, $elementConfig);
+            $value = $this->elementValueFor($element, $elementConfig, $full_related_data);
 
             $data[$key] = $value;
 
@@ -197,7 +200,7 @@ class AlgoliaSync
         return $data;
     }
 
-    private function elementValueFor(\Element $element, array $params)
+    private function elementValueFor(\Element $element, array $params, $full_related_data = true)
     {
         $value = null;
         $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:beforeelementdata', ['value' => &$value]));
@@ -218,6 +221,11 @@ class AlgoliaSync
 
         if ($element instanceof \ElementTextPro || $element instanceof ElementTextareaPro) {
 
+            $data = $element->data();
+            if ($data === null) {
+                $data = [];
+            }
+
             $values = array_filter(array_map(function ($item) use ($params) {
                 $value = $item['value'] ?? '';
                 $value = strip_tags($value);
@@ -229,7 +237,7 @@ class AlgoliaSync
                 }
 
                 return strlen($value) > 0 ? $value : null;
-            }, $element->data()));
+            }, $data));
 
             $repeatable = $element->config->get('repeatable', false);
             if ($params['filter']['_limit'] ?? null === 1) {
@@ -254,6 +262,7 @@ class AlgoliaSync
 
             return $data;
         }
+
 
         if ($element instanceof \ElementFilesPro) {
 
@@ -311,16 +320,23 @@ class AlgoliaSync
             return $values ? array_shift($values) : null;
         }
 
-        if ($element instanceof \ElementRelatedItemsPro) {
-            $related_items = $element->getRelatedItems(true);
 
+        if ($element instanceof \ElementRelatedItemsPro) {
+
+            $related_items = $element->getRelatedItems(true);
             $items = [];
 
-            foreach ($related_items as $item)
-            {
-                $data = $this->algoliaData($item);
+            foreach ($related_items as $item) {
+
+                if ($full_related_data) {
+                    $data = $this->algoliaData($item, false);
+                } else {
+                    $data = [];
+                    $data['id'] = $item->id;
+                }
+
                 if ($data) {
-                    $items[] = $this->algoliaData(($item));
+                    $items[] = $data;
                 }
             }
 
@@ -345,6 +361,7 @@ class AlgoliaSync
             ];
         }
 
+
         if ($element instanceof \ElementRepeatable) {
 
             $values = array_filter(array_map(function ($item) {
@@ -358,6 +375,7 @@ class AlgoliaSync
 
             return array_shift($values);
         }
+
 
         if ($element instanceof \ElementItemTag) {
             return $element->getItem()->getTags();
