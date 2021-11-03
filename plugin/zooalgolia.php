@@ -74,7 +74,7 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
         /** @var \Item $item */
         $item = $event->getSubject();
 
-        $algoliaSync = new AlgoliaSync($item->getApplication());
+        $algoliaSync = new AlgoliaSync($item->getType());
         $algoliaSync->sync($item);
     }
 
@@ -83,7 +83,7 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
         /** @var \Item $item */
         $item = $event->getSubject();
 
-        $algoliaSync = new AlgoliaSync($item->getApplication());
+        $algoliaSync = new AlgoliaSync($item->getType());
         $algoliaSync->batchDelete([$event->getSubject()->id]);
     }
 

@@ -221,6 +221,11 @@ class AlgoliaSync
 
         if ($element instanceof \ElementTextPro || $element instanceof ElementTextareaPro) {
 
+            $data = $element->data();
+            if ($data === null) {
+                $data = [];
+            }
+
             $values = array_filter(array_map(function ($item) use ($params) {
                 $value = $item['value'] ?? '';
                 $value = strip_tags($value);
@@ -232,7 +237,7 @@ class AlgoliaSync
                 }
 
                 return strlen($value) > 0 ? $value : null;
-            }, $element->data()));
+            }, $data));
 
             $repeatable = $element->config->get('repeatable', false);
             if ($params['filter']['_limit'] ?? null === 1) {
