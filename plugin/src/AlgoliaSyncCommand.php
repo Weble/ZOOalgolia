@@ -37,7 +37,7 @@ class AlgoliaSyncCommand extends Command
             $applications = $zoo->table->application->all();
         }
 
-        //$type = $input->getOption('type');
+        $type = $input->getOption('type');
 
         $ids = $input->getOption('ids');
         if ($ids) {
@@ -47,7 +47,12 @@ class AlgoliaSyncCommand extends Command
         foreach ($applications as $application) {
             foreach ($application->getTypes() as $app_type) {
 
+                if ($type !== null && $type !== $app_type->identifier) {
+                    continue;
+                }
+
                 $algoliaSync = new AlgoliaSync($app_type);
+
                 if (!$algoliaSync->isConfigured()) {
                     continue;
                 }
@@ -66,10 +71,6 @@ class AlgoliaSyncCommand extends Command
                 $progress = new ProgressBar($output, $total);
 
                 foreach ($items as $item) {
-
-                    /*if ($type !== null && $type !== $item->getType()->id) {
-                        continue;
-                    }*/
 
                     $progress->advance();
                     $algoliaSync->sync($item);
