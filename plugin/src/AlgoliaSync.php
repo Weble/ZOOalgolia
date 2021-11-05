@@ -10,6 +10,7 @@ use Category;
 use ElementTextareaPro;
 use ItemRenderer;
 use JFolder;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Menu\MenuItem;
 use Joomla\CMS\Router\Route;
@@ -20,6 +21,7 @@ use Type;
 
 class AlgoliaSync
 {
+
     private App $zoo;
     private ItemRenderer $renderer;
     private ?SearchClient $client = null;
@@ -195,9 +197,7 @@ class AlgoliaSync
             }
         }
 
-        //$this->zoo->event->dispatcher->notify($this->zoo->event->create($item, 'algolia:data', ['data' => &$data]));
-
-        $data_override = $this->notify('onAlgoliaData', [$item, $data]);
+        $data_override = $this->notify('onYooAlgoliaData', [$item, $data]);
 
         if ($data_override != null) {
             return $data_override;
@@ -210,9 +210,7 @@ class AlgoliaSync
     {
         $value = null;
 
-        //$this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:beforeelementdata', ['value' => &$value]));
-
-        $value = $this->notify('onAlgoliaBeforeElementData', [$element, $params]);
+        $value = $this->notify('onYooAlgoliaBeforeElementData', [$element, $params]);
 
         if ($value !== null) {
             return $value;
@@ -395,21 +393,15 @@ class AlgoliaSync
             return $value;
         }
 
-        //$this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:elementdata', ['value' => &$value]));
-
-        return $this->notify('onAlgoliaElementData', [$element]);
+        return $this->notify('onYooAlgoliaElementData', [$element]);
 
     }
 
     private function notify($event_name, $data)
     {
-        $dispatcher = \JEventDispatcher::getInstance();
+        $application = Factory::getApplication();
 
-        if (!$dispatcher) {
-            return null;
-        }
-
-        $value = $dispatcher->trigger($event_name, $data);
+        $value = $application->triggerEvent($event_name, $data);
 
         if (!is_array($value) || count($value) == 0) {
             return null;
