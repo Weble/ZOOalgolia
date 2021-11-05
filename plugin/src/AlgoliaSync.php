@@ -401,14 +401,20 @@ class AlgoliaSync
 
     }
 
-    private function notify($event_name, $data) {
+    private function notify($event_name, $data)
+    {
+        $dispatcher = \JEventDispatcher::getInstance();
 
-        $value = \JEventDispatcher::getInstance()->trigger($event_name, $data);
+        if (!$dispatcher) {
+            return null;
+        }
+
+        $value = $dispatcher->trigger($event_name, $data);
 
         if (!is_array($value) || count($value) == 0) {
             return null;
         }
-        
+
         return count($value) > 1 ? array_merge($value) : array_shift($value);
 
     }
