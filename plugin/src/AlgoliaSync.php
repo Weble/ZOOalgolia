@@ -195,7 +195,13 @@ class AlgoliaSync
             }
         }
 
-        $this->zoo->event->dispatcher->notify($this->zoo->event->create($item, 'algolia:data', ['data' => &$data]));
+        //$this->zoo->event->dispatcher->notify($this->zoo->event->create($item, 'algolia:data', ['data' => &$data]));
+
+        $data_override = $this->notify('onAlgoliaData', [$item, $data]);
+
+        if ($data_override != null) {
+            return $data_override;
+        }
 
         return $data;
     }
@@ -203,11 +209,15 @@ class AlgoliaSync
     private function elementValueFor(\Element $element, array $params, $full_related_data = true)
     {
         $value = null;
-        $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:beforeelementdata', ['value' => &$value]));
+
+        //$this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:beforeelementdata', ['value' => &$value]));
+
+        $value = $this->notify('onAlgoliaBeforeElementData', [$element, $params]);
 
         if ($value !== null) {
             return $value;
         }
+
 
         if ($element instanceof \ElementItemName) {
             return $element->getItem()->name;
@@ -385,10 +395,22 @@ class AlgoliaSync
             return $value;
         }
 
-        $value = null;
-        $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:elementdata', ['value' => &$value]));
+        //$this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:elementdata', ['value' => &$value]));
 
-        return $value;
+        return $this->notify('onAlgoliaElementData', [$element]);
+
+    }
+
+    private function notify($event_name, $data) {
+
+        $value = \JEventDispatcher::getInstance()->trigger($event_name, $data);
+
+        if (!is_array($value) || count($value) == 0) {
+            return null;
+        }
+        
+        return count($value) > 1 ? array_merge($value) : array_shift($value);
+
     }
 
     protected function findMenuItem($type, $id, $lang)
