@@ -385,7 +385,7 @@ class AlgoliaSync
             return $value;
         }
 
-        $value = null;
+        $value = $element->getValue();
         $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:elementdata', ['value' => &$value]));
 
         return $value;
