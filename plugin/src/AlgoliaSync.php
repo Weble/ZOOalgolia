@@ -389,7 +389,7 @@ class AlgoliaSync
             return $element->getItem()->getTags();
         }
 
-        if ($value = $element->get('value', null)) {
+        if ($value = $element->getValue()) {
             return $value;
         }
 
