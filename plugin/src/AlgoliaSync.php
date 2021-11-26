@@ -10,6 +10,7 @@ use Category;
 use ElementTextareaPro;
 use ItemRenderer;
 use JFolder;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Menu\MenuItem;
 use Joomla\CMS\Router\Route;
@@ -20,6 +21,7 @@ use Type;
 
 class AlgoliaSync
 {
+
     private App $zoo;
     private ItemRenderer $renderer;
     private ?SearchClient $client = null;
@@ -195,7 +197,11 @@ class AlgoliaSync
             }
         }
 
-        $this->zoo->event->dispatcher->notify($this->zoo->event->create($item, 'algolia:data', ['data' => &$data]));
+        $data_override = $this->notify('onYooAlgoliaData', [$item, $data]);
+
+        if ($data_override != null) {
+            return $data_override;
+        }
 
         return $data;
     }
@@ -203,11 +209,13 @@ class AlgoliaSync
     private function elementValueFor(\Element $element, array $params, $full_related_data = true)
     {
         $value = null;
-        $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:beforeelementdata', ['value' => &$value]));
+
+        $value = $this->notify('onYooAlgoliaBeforeElementData', [$element, $params]);
 
         if ($value !== null) {
             return $value;
         }
+
 
         if ($element instanceof \ElementItemName) {
             return $element->getItem()->name;
@@ -381,14 +389,26 @@ class AlgoliaSync
             return $element->getItem()->getTags();
         }
 
-        if ($value = $element->get('value', null)) {
+        if ($value = $element->getValue()) {
             return $value;
         }
 
-        $value = $element->getValue();
-        $this->zoo->event->dispatcher->notify($this->zoo->event->create($element, 'algolia:elementdata', ['value' => &$value]));
+        return $this->notify('onYooAlgoliaElementData', [$element]);
 
-        return $value;
+    }
+
+    private function notify($event_name, $data)
+    {
+        $application = Factory::getApplication();
+
+        $value = $application->triggerEvent($event_name, $data);
+
+        if (!is_array($value) || count($value) == 0) {
+            return null;
+        }
+
+        return count($value) > 1 ? array_merge($value) : array_shift($value);
+
     }
 
     protected function findMenuItem($type, $id, $lang)
