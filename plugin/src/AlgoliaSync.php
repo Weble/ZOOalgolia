@@ -415,6 +415,7 @@ class AlgoliaSync
     {
         $zoo = App::getInstance('zoo');
         if ($this->menuItems === null) {
+
             $this->menuItems = array_fill_keys(
                 [
                     'frontpage',
@@ -426,37 +427,36 @@ class AlgoliaSync
                 []
             );
 
-            foreach (LanguageHelper::getContentLanguages() as $langCode => $language) {
-                $menu_items = $zoo->system->application->getMenu('site')->getItems([
-                    'language',
-                    'component_id'
-                ], [
-                    $langCode,
-                    \JComponentHelper::getComponent('com_zoo')->id
-                ]) ?: [];
 
-                /** @var MenuItem $menu_item */
-                foreach ($menu_items as $menu_item) {
-                    /** @var Registry $menuItemParams */
-                    $menuItemParams = $zoo->parameter->create($menu_item->params);
-                    $menuItemLanguage = $menu_item->language;
+            $menu_items = $zoo->system->application->getMenu('site')->getItems([
+                'component_id'
+            ], [
+                \JComponentHelper::getComponent('com_zoo')->id
+            ]) ?: [];
 
-                    switch (@$menu_item->query['view']) {
-                        case 'frontpage':
-                            $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
-                            break;
-                        case 'category':
-                            $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
-                            break;
-                        case 'item':
-                            $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
-                            break;
-                        case 'submission':
-                            $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
-                            break;
-                    }
+
+            /** @var MenuItem $menu_item */
+            foreach ($menu_items as $menu_item) {
+                /** @var Registry $menuItemParams */
+                $menuItemParams = $zoo->parameter->create($menu_item->params);
+                $menuItemLanguage = $menu_item->language;
+
+                switch (@$menu_item->query['view']) {
+                    case 'frontpage':
+                        $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
+                        break;
+                    case 'category':
+                        $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
+                        break;
+                    case 'item':
+                        $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
+                        break;
+                    case 'submission':
+                        $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
+                        break;
                 }
             }
+
         }
 
         return @$this->menuItems[$type][$id][$lang] ?: @$this->menuItems[$type][$id]['*'];
@@ -464,6 +464,8 @@ class AlgoliaSync
 
     private function getItemUrls(\Item $item, $lang)
     {
+
+        $this->formatItemUrl('dsfsdfsdf');
         $urls = [];
         // Priority 1: direct link to item
         if ($menu_item = $this->findMenuItem('item', $item->id, $lang)) {
@@ -482,14 +484,14 @@ class AlgoliaSync
         $primary_category = $item->getPrimaryCategory();
 
         if (!$categories && $menu_item_frontpage) {
+
             return [
-                'default' => str_replace('/item/', '/',
-                    Route::link('site', $link . '&Itemid=' . $menu_item_frontpage->id))
+                'default' => $this->formatItemUrl($link . '&Itemid=' . $menu_item_frontpage->id)
             ];
         }
 
         if (!$categories) {
-            return ['default' => str_replace('/item/', '/', Route::link('site', $link))];
+            return ['default' => $this->formatItemUrl($link)];
         }
 
         foreach ($categories as $category) {
@@ -499,7 +501,7 @@ class AlgoliaSync
 
             /* If not category */
             if (!$category || !$category->id) {
-                $urls['default'] = str_replace('/item/', '/', Route::link('site', $link_cat));
+                $urls['default'] = $this->formatItemUrl($link_cat);
                 continue;
             }
 
@@ -519,15 +521,38 @@ class AlgoliaSync
             }
 
             if ($category->id) {
-                $urls[$category->id] = str_replace('/item/', '/', Route::link('site', $link_cat));
+                $urls[$category->id] = $this->formatItemUrl($link_cat);
             }
 
             if ($primary_category && $primary_category->id == $category->id) {
-                $urls['default'] = str_replace('/item/', '/', Route::link('site', $link_cat));
+                $urls['default'] = $this->formatItemUrl($link_cat);
             }
         }
 
         return $urls;
+    }
+
+    private function formatItemUrl($raw_link)
+    {
+
+        $plugin = \JPluginHelper::getPlugin('system', 'zooseo');
+
+        if (!$plugin) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        if (!\JPluginHelper::isEnabled('system', 'zooseo')) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        $params = json_decode($plugin->params);
+
+        if ($params->remove_item != '1') {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        return str_replace('/item/', '/', \JRoute::link('site', $raw_link));
+
     }
 
     private function getCategoryUrl(\Category $category, $lang)
