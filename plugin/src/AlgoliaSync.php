@@ -464,8 +464,6 @@ class AlgoliaSync
 
     private function getItemUrls(\Item $item, $lang)
     {
-
-        $this->formatItemUrl('dsfsdfsdf');
         $urls = [];
         // Priority 1: direct link to item
         if ($menu_item = $this->findMenuItem('item', $item->id, $lang)) {
@@ -555,12 +553,36 @@ class AlgoliaSync
 
     }
 
+
+    private function formatCategoryUrl($raw_link)
+    {
+
+        $plugin = \JPluginHelper::getPlugin('system', 'zooseo');
+
+        if (!$plugin) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        if (!\JPluginHelper::isEnabled('system', 'zooseo')) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        $params = json_decode($plugin->params);
+
+        if ($params->remove_category != '1') {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        return str_replace('/category/', '/', \JRoute::link('site', $raw_link));
+
+    }
+
     private function getCategoryUrl(\Category $category, $lang)
     {
         $urls = [];
         // Priority 1: direct link to item
         if ($menu_item = $this->findMenuItem('category', $category->id, $lang)) {
-            return str_replace('/category/', '/', Route::link('site', $menu_item->link . '&Itemid=' . $menu_item->id));
+            return $this->formatCategoryUrl($menu_item->link . '&Itemid=' . $menu_item->id);
         }
 
         $menu_item_frontpage = $this->findMenuItem('frontpage', $category->application_id, $lang);
@@ -576,7 +598,7 @@ class AlgoliaSync
             $itemid = $menu_item_frontpage->id;
         }
 
-        return str_replace('/category/', '/', Route::link('site', $link . '&Itemid=' . $itemid));
+        return $this->formatCategoryUrl($link . '&Itemid=' . $itemid);
     }
 
     /**
