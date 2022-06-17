@@ -6,23 +6,45 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use Weble\ZOOAlgolia\AlgoliaSync;
 use Weble\ZOOAlgolia\AlgoliaSyncCommand;
-use Symfony\Component\Console\Application as ConsoleApplication;
+use Joomla\Application\ApplicationEvents;
 
 class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
 {
+    protected $app;
+
+    public function __construct(&$subject, $config = [])
+    {
+        parent::__construct($subject, $config);
+
+        if (!$this->app->isClient('cli'))
+        {
+            return;
+        }
+
+        $this->registerAlgoliaSyncCommand();
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        if ($this->app->isClient('cli'))
+        {
+            return [
+                ApplicationEvents::BEFORE_EXECUTE => 'registerAlgoliaSyncCommand',
+            ];
+        }
+    }
+
+    public function registerAlgoliaSyncCommand()
+    {
+        $this->app->addCommand(new AlgoliaSyncCommand());
+    }
+
     /**
      * onAfterInitialise handler
      */
     public function onAfterInitialise()
     {
         $this->init();
-    }
-
-    public function onGetConsoleCommands(ConsoleApplication $console)
-    {
-        $console->addCommands([
-            new AlgoliaSyncCommand()
-        ]);
     }
 
     protected function init()
