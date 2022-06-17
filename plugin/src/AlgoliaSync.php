@@ -10,6 +10,8 @@ use Category;
 use ElementTextareaPro;
 use ItemRenderer;
 use JFolder;
+use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Menu\MenuItem;
@@ -34,8 +36,11 @@ class AlgoliaSync
     {
         $this->application = $type->getApplication();
 
-
         $this->zoo = $this->application->app;
+
+        /* Override route helper */
+        $this->zoo->loader->register('RouteHelper', 'root:plugins/system/zooalgolia/helpers/route.php');
+
         $this->renderer = $this->zoo->renderer->create('item', ['path' => $this->zoo->path]);
 
         if ($this->application->getParams()->get('global.config.algolia_app_id') && $this->application->getParams()->get('global.config.algolia_app_id')) {
@@ -375,7 +380,7 @@ class AlgoliaSync
             $values = array_filter(array_map(function ($item) {
                 $value = $item['value'] ?? '';
                 return strlen($value) > 0 ? $value : null;
-            }, $element->data()));
+            }, $element->data() ?? []));
 
             if ($element->config->get('repeatable', false)) {
                 return $values;
@@ -427,7 +432,10 @@ class AlgoliaSync
             );
 
             foreach (LanguageHelper::getContentLanguages() as $langCode => $language) {
-                $menu_items = $zoo->system->application->getMenu('site')->getItems([
+                /** @var SiteApplication $app */
+                $app = CMSApplication::getInstance('site');
+
+                $menu_items = $app->getMenu('site')->getItems([
                     'language',
                     'component_id'
                 ], [
@@ -458,7 +466,6 @@ class AlgoliaSync
                 }
             }
         }
-
         return @$this->menuItems[$type][$id][$lang] ?: @$this->menuItems[$type][$id]['*'];
     }
 
