@@ -41,6 +41,9 @@ class AlgoliaSync
         /* Override route helper */
         $this->zoo->loader->register('RouteHelper', 'root:plugins/system/zooalgolia/helpers/route.php');
 
+        /* Override menu helper */
+        $this->zoo->loader->register('MenuHelper', 'root:plugins/system/zooalgolia/helpers/menu.php');
+
         $this->renderer = $this->zoo->renderer->create('item', ['path' => $this->zoo->path]);
 
         if ($this->application->getParams()->get('global.config.algolia_app_id') && $this->application->getParams()->get('global.config.algolia_app_id')) {
