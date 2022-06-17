@@ -618,21 +618,14 @@ class AlgoliaSync
         return $data;
     }
 
-    private function array_flatten($array = null) {
-        $result = array();
+    function array_flatten(array $array): array
+    {
+        $return = [];
 
-        if (!is_array($array)) {
-            $array = func_get_args();
-        }
+        array_walk_recursive($array, function ($x) use (&$return) {
+            $return[] = $x;
+        });
 
-        foreach ($array as $key => $value) {
-            if (is_array($value)) {
-                $result = array_merge($result, $this->array_flatten($value));
-            } else {
-                $result = array_merge($result, array($key => $value));
-            }
-        }
-
-        return $result;
+        return $return;
     }
 }
