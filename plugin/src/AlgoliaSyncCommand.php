@@ -4,18 +4,23 @@ namespace Weble\ZOOAlgolia;
 
 use App;
 use Item;
-use Symfony\Component\Console\Command\Command;
+use Joomla\Console\Command\AbstractCommand;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class AlgoliaSyncCommand extends Command
+class AlgoliaSyncCommand extends AbstractCommand
 {
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'algolia:sync';
 
-    protected function configure()
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    protected function configure(): void
     {
         $this->setDescription('Import ZOO items into Algolia');
         $this->addOption('app', 'a', InputArgument::OPTIONAL, 'The id of the app to import types from');
@@ -23,7 +28,7 @@ class AlgoliaSyncCommand extends Command
         $this->addOption('ids', null, InputArgument::OPTIONAL, 'The comma separated list of the ids of the items to import');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function doExecute(InputInterface $input, OutputInterface $output): int
     {
         require_once(JPATH_BASE.'/plugins/system/zlframework/config.php');
         require_once JPATH_SITE . '/plugins/system/zooalgolia/vendor/autoload.php';
