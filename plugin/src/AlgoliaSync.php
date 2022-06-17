@@ -144,7 +144,7 @@ class AlgoliaSync
         if (!count($config)) {
             return null;
         }
-        
+
         $this->categories = $application->getCategoryTree();
         $data = [
             'id'  => $item->id,
@@ -627,7 +627,7 @@ class AlgoliaSync
 
         foreach ($array as $key => $value) {
             if (is_array($value)) {
-                $result = array_merge($result, array_flatten($value));
+                $result = array_merge($result, $this->array_flatten($value));
             } else {
                 $result = array_merge($result, array($key => $value));
             }
