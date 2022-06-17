@@ -145,11 +145,24 @@ class AlgoliaSync
             return null;
         }
 
+        var_dump(array_filter(array_merge($item->getRelatedCategoryIds(), $this->array_flatten(array_map(function($id) {
+                /** @var Category $category */
+                $category = $this->categories[$id] ?? null;
+                if (!$category) {
+                    return [];
+                }
+
+                return array_map(function($parent) {
+                    return $parent->id;
+                }, $category->getPathway());
+
+            }, $item->getRelatedCategoryIds())))));
+        die;
         $this->categories = $application->getCategoryTree();
         $data = [
             'id'  => $item->id,
             'url' => [],
-            'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), array_flatten(array_map(function($id) {
+            'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), $this->array_flatten(array_map(function($id) {
                 /** @var Category $category */
                 $category = $this->categories[$id] ?? null;
                 if (!$category) {
@@ -616,5 +629,23 @@ class AlgoliaSync
         }
 
         return $data;
+    }
+
+    private function array_flatten($array = null) {
+        $result = array();
+
+        if (!is_array($array)) {
+            $array = func_get_args();
+        }
+
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $result = array_merge($result, array_flatten($value));
+            } else {
+                $result = array_merge($result, array($key => $value));
+            }
+        }
+
+        return $result;
     }
 }
