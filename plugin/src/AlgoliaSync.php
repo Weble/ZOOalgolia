@@ -157,7 +157,7 @@ class AlgoliaSync
         $data = [
             'id'  => $item->id,
             'url' => [],
-            'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), array_flatten(array_map(function($id) {
+            'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), $this->array_flatten(array_map(function($id) {
                 /** @var Category $category */
                 $category = $this->categories[$id] ?? null;
                 if (!$category) {
@@ -626,5 +626,16 @@ class AlgoliaSync
         }
 
         return $data;
+    }
+
+    private function array_flatten(array $array): array
+    {
+        $return = [];
+
+        array_walk_recursive($array, function ($x) use (&$return) {
+            $return[] = $x;
+        });
+
+        return $return;
     }
 }
