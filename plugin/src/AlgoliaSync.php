@@ -133,7 +133,7 @@ class AlgoliaSync
         }
 
         /** @var Application $application */
-        $application = $this->application;
+        $application = $item->getApplication();
 
         /** @var Type $type */
         $type = $item->getType();
@@ -182,7 +182,15 @@ class AlgoliaSync
 
             $value = $this->elementValueFor($element, $elementConfig, $full_related_data);
 
-            $data[$key] = $value;
+            if (!isset($data[$key])) {
+                $data[$key] = $value;
+            } else {
+                if (!is_array($data[$key])) {
+                    $data[$key] = [$data[$key]];
+                    
+                    $data[$key][] = $value;
+                }
+            }
 
             $parts = explode(".", $key);
 
