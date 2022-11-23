@@ -8,6 +8,8 @@ use Joomla\CMS\Factory;
 use Weble\ZOOAlgolia\AlgoliaSync;
 use Joomla\Application\ApplicationEvents;
 use Weble\ZOOAlgolia\AlgoliaSyncCommandJ4;
+use Weble\ZOOAlgolia\AlgoliaSyncCommandJ3;
+use Symfony\Component\Console\Application as ConsoleApplication;
 
 class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
 {
@@ -46,6 +48,14 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
     public function onAfterInitialise()
     {
         $this->init();
+    }
+
+    // J3
+    public function onGetConsoleCommands(ConsoleApplication $console)
+    {
+        $console->addCommands([
+            new AlgoliaSyncCommandJ3()
+        ]);
     }
 
     protected function init()
