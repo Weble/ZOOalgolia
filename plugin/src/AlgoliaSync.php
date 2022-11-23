@@ -9,9 +9,7 @@ use Application;
 use Category;
 use ElementTextareaPro;
 use ItemRenderer;
-use JFolder;
 use Joomla\CMS\Application\CMSApplication;
-use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Menu\MenuItem;
@@ -442,36 +440,42 @@ class AlgoliaSync
                 []
             );
 
+            foreach (LanguageHelper::getContentLanguages() as $language) {
 
-            $menu_items = CMSApplication::getInstance('site')->getMenu('site')->getItems([
-                'component_id'
-            ], [
-                \JComponentHelper::getComponent('com_zoo')->id
-            ]) ?: [];
+                $app = CMSApplication::getInstance('site');
 
-            /** @var MenuItem $menu_item */
-            foreach ($menu_items as $menu_item) {
-                /** @var Registry $menuItemParams */
-                $menuItemParams = $zoo->parameter->create($menu_item->getParams());
-                $menuItemLanguage = $menu_item->language;
+                $menu_items = $app->getMenu('site')->getItems([
+                    'component_id',
+                    'language'
+                ], [
+                    \JComponentHelper::getComponent('com_zoo')->id,
+                    $language->lang_code
+                ]) ?: [];
 
-                switch (@$menu_item->query['view']) {
-                    case 'frontpage':
-                        $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
-                        break;
-                    case 'category':
-                        $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
-                        break;
-                    case 'item':
-                        $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
-                        break;
-                    case 'submission':
-                        $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
-                        break;
+                /** @var MenuItem $menu_item */
+                foreach ($menu_items as $menu_item) {
+                    /** @var Registry $menuItemParams */
+                    $menuItemParams = $zoo->parameter->create($menu_item->getParams());
+                    $menuItemLanguage = $menu_item->language;
+
+                    switch (@$menu_item->query['view']) {
+                        case 'frontpage':
+                            $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
+                            break;
+                        case 'category':
+                            $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
+                            break;
+                        case 'item':
+                            $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
+                            break;
+                        case 'submission':
+                            $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
+                            break;
+                    }
                 }
             }
-
         }
+
         return @$this->menuItems[$type][$id][$lang] ?: @$this->menuItems[$type][$id]['*'];
     }
 
@@ -678,7 +682,7 @@ class AlgoliaSync
         return $data;
     }
 
-    function array_flatten(array $array): array
+    private function array_flatten(array $array): array
     {
         $return = [];
 
