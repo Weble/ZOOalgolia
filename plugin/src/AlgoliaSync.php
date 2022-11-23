@@ -141,7 +141,7 @@ class AlgoliaSync
         }
 
         /** @var Application $application */
-        $application = $this->application;
+        $application = $item->getApplication();
 
         /** @var Type $type */
         $type = $item->getType();
@@ -190,7 +190,15 @@ class AlgoliaSync
 
             $value = $this->elementValueFor($element, $elementConfig, $full_related_data);
 
-            $data[$key] = $value;
+            if (!isset($data[$key])) {
+                $data[$key] = $value;
+            } else {
+                if (!is_array($data[$key])) {
+                    $data[$key] = [$data[$key]];
+                    
+                    $data[$key][] = $value;
+                }
+            }
 
             $parts = explode(".", $key);
 
@@ -423,6 +431,7 @@ class AlgoliaSync
     {
         $zoo = App::getInstance('zoo');
         if ($this->menuItems === null) {
+
             $this->menuItems = array_fill_keys(
                 [
                     'frontpage',
@@ -434,40 +443,36 @@ class AlgoliaSync
                 []
             );
 
-            foreach (LanguageHelper::getContentLanguages() as $langCode => $language) {
-                /** @var SiteApplication $app */
-                $app = CMSApplication::getInstance('site');
 
-                $menu_items = $app->getMenu('site')->getItems([
-                    'language',
-                    'component_id'
-                ], [
-                    $langCode,
-                    \JComponentHelper::getComponent('com_zoo')->id
-                ]) ?: [];
+            $menu_items = $zoo->system->application->getMenu('site')->getItems([
+                'component_id'
+            ], [
+                \JComponentHelper::getComponent('com_zoo')->id
+            ]) ?: [];
 
-                /** @var MenuItem $menu_item */
-                foreach ($menu_items as $menu_item) {
-                    /** @var Registry $menuItemParams */
-                    $menuItemParams = $zoo->parameter->create($menu_item->params);
-                    $menuItemLanguage = $menu_item->language;
 
-                    switch (@$menu_item->query['view']) {
-                        case 'frontpage':
-                            $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
-                            break;
-                        case 'category':
-                            $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
-                            break;
-                        case 'item':
-                            $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
-                            break;
-                        case 'submission':
-                            $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
-                            break;
-                    }
+            /** @var MenuItem $menu_item */
+            foreach ($menu_items as $menu_item) {
+                /** @var Registry $menuItemParams */
+                $menuItemParams = $zoo->parameter->create($menu_item->params);
+                $menuItemLanguage = $menu_item->language;
+
+                switch (@$menu_item->query['view']) {
+                    case 'frontpage':
+                        $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
+                        break;
+                    case 'category':
+                        $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
+                        break;
+                    case 'item':
+                        $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
+                        break;
+                    case 'submission':
+                        $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
+                        break;
                 }
             }
+
         }
         return @$this->menuItems[$type][$id][$lang] ?: @$this->menuItems[$type][$id]['*'];
     }
@@ -492,14 +497,14 @@ class AlgoliaSync
         $primary_category = $item->getPrimaryCategory();
 
         if (!$categories && $menu_item_frontpage) {
+
             return [
-                'default' => str_replace('/item/', '/',
-                    Route::link('site', $link . '&Itemid=' . $menu_item_frontpage->id))
+                'default' => $this->formatItemUrl($link . '&Itemid=' . $menu_item_frontpage->id)
             ];
         }
 
         if (!$categories) {
-            return ['default' => str_replace('/item/', '/', Route::link('site', $link))];
+            return ['default' => $this->formatItemUrl($link)];
         }
 
         foreach ($categories as $category) {
@@ -509,7 +514,7 @@ class AlgoliaSync
 
             /* If not category */
             if (!$category || !$category->id) {
-                $urls['default'] = str_replace('/item/', '/', Route::link('site', $link_cat));
+                $urls['default'] = $this->formatItemUrl($link_cat);
                 continue;
             }
 
@@ -529,15 +534,62 @@ class AlgoliaSync
             }
 
             if ($category->id) {
-                $urls[$category->id] = str_replace('/item/', '/', Route::link('site', $link_cat));
+                $urls[$category->id] = $this->formatItemUrl($link_cat);
             }
 
             if ($primary_category && $primary_category->id == $category->id) {
-                $urls['default'] = str_replace('/item/', '/', Route::link('site', $link_cat));
+                $urls['default'] = $this->formatItemUrl($link_cat);
             }
         }
 
         return $urls;
+    }
+
+    private function formatItemUrl($raw_link)
+    {
+
+        $plugin = \JPluginHelper::getPlugin('system', 'zooseo');
+
+        if (!$plugin) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        if (!\JPluginHelper::isEnabled('system', 'zooseo')) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        $params = json_decode($plugin->params);
+
+        if ($params->remove_item != '1') {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        return str_replace('/item/', '/', \JRoute::link('site', $raw_link));
+
+    }
+
+
+    private function formatCategoryUrl($raw_link)
+    {
+
+        $plugin = \JPluginHelper::getPlugin('system', 'zooseo');
+
+        if (!$plugin) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        if (!\JPluginHelper::isEnabled('system', 'zooseo')) {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        $params = json_decode($plugin->params);
+
+        if ($params->remove_category != '1') {
+            return \JRoute::link('site', $raw_link);
+        }
+
+        return str_replace('/category/', '/', \JRoute::link('site', $raw_link));
+
     }
 
     private function getCategoryUrl(\Category $category, $lang)
@@ -545,7 +597,7 @@ class AlgoliaSync
         $urls = [];
         // Priority 1: direct link to item
         if ($menu_item = $this->findMenuItem('category', $category->id, $lang)) {
-            return str_replace('/category/', '/', Route::link('site', $menu_item->link . '&Itemid=' . $menu_item->id));
+            return $this->formatCategoryUrl($menu_item->link . '&Itemid=' . $menu_item->id);
         }
 
         $menu_item_frontpage = $this->findMenuItem('frontpage', $category->application_id, $lang);
@@ -561,7 +613,7 @@ class AlgoliaSync
             $itemid = $menu_item_frontpage->id;
         }
 
-        return str_replace('/category/', '/', Route::link('site', $link . '&Itemid=' . $itemid));
+        return $this->formatCategoryUrl($link . '&Itemid=' . $itemid);
     }
 
     /**
@@ -628,7 +680,7 @@ class AlgoliaSync
         return $data;
     }
 
-    private function array_flatten(array $array): array
+    function array_flatten(array $array): array
     {
         $return = [];
 
