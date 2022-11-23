@@ -175,16 +175,16 @@ class AlgoliaSync
 
         $this->categories = $application->getCategoryTree();
         $data = [
-            'url'          => [],
-            'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), $this->array_flatten(array_map(function ($id) {
-            'id'           => $item->id,
+            'id'  => $item->id,
+            'url' => [],
+            'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), $this->array_flatten(array_map(function($id) {
                 /** @var Category $category */
                 $category = $this->categories[$id] ?? null;
                 if (!$category) {
                     return [];
                 }
 
-                return array_map(function ($parent) {
+                return array_map(function($parent) {
                     return $parent->id;
                 }, $category->getPathway());
 
