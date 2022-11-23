@@ -56,7 +56,6 @@ class AlgoliaSync
         if ($this->client && $this->application->getParams()->get('global.config.algolia_index_'. $type->identifier)) {
             $this->index = $this->client->initIndex($this->application->getParams()->get('global.config.algolia_index_'. $type->identifier));
         }
-
     }
 
     public function isConfigured(): bool
@@ -444,17 +443,16 @@ class AlgoliaSync
             );
 
 
-            $menu_items = $zoo->system->application->getMenu('site')->getItems([
+            $menu_items = CMSApplication::getInstance('site')->getMenu('site')->getItems([
                 'component_id'
             ], [
                 \JComponentHelper::getComponent('com_zoo')->id
             ]) ?: [];
 
-
             /** @var MenuItem $menu_item */
             foreach ($menu_items as $menu_item) {
                 /** @var Registry $menuItemParams */
-                $menuItemParams = $zoo->parameter->create($menu_item->params);
+                $menuItemParams = $zoo->parameter->create($menu_item->getParams());
                 $menuItemLanguage = $menu_item->language;
 
                 switch (@$menu_item->query['view']) {

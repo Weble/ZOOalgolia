@@ -72,7 +72,6 @@ class AlgoliaSyncCommandJ4 extends AbstractCommand
                     $items = $zoo->table->item->all(['conditions' => 'type = ' . $app_type->identifier . ' AND id IN ( ' . implode(",", $ids) . ')']);
                     $total = count($items);
                 } else {
-                    //$items = $zoo->table->item->findAll($application->id);
                     $items =  $zoo->table->item->getByType($app_type->identifier, $application->id);
                     $total = count($items);
                 }
@@ -80,7 +79,6 @@ class AlgoliaSyncCommandJ4 extends AbstractCommand
                 $progress = new ProgressBar($output, $total);
 
                 foreach ($items as $item) {
-
                     $progress->advance();
                     $algoliaSync->sync($item);
                 }
