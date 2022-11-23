@@ -4,12 +4,44 @@ defined('_JEXEC') or die('Restricted access');
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+use Joomla\CMS\Factory;
 use Weble\ZOOAlgolia\AlgoliaSync;
-use Weble\ZOOAlgolia\AlgoliaSyncCommand;
+use Joomla\Application\ApplicationEvents;
+use Weble\ZOOAlgolia\AlgoliaSyncCommandJ4;
+use Weble\ZOOAlgolia\AlgoliaSyncCommandJ3;
 use Symfony\Component\Console\Application as ConsoleApplication;
 
 class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
 {
+    protected $app;
+
+    public function __construct(&$subject, $config = [])
+    {
+        parent::__construct($subject, $config);
+
+        if (!$this->app->isClient('cli'))
+        {
+            return;
+        }
+
+        $this->registerAlgoliaSyncCommand();
+    }
+
+    public static function getSubscribedEvents(): array
+    {
+        if ($this->app->isClient('cli'))
+        {
+            return [
+                ApplicationEvents::BEFORE_EXECUTE => 'registerAlgoliaSyncCommand',
+            ];
+        }
+    }
+
+    public function registerAlgoliaSyncCommand()
+    {
+        $this->app->addCommand(new AlgoliaSyncCommandJ4());
+    }
+
     /**
      * onAfterInitialise handler
      */
@@ -18,15 +50,24 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
         $this->init();
     }
 
+    // J3
     public function onGetConsoleCommands(ConsoleApplication $console)
     {
         $console->addCommands([
-            new AlgoliaSyncCommand()
+            new AlgoliaSyncCommandJ3()
         ]);
     }
 
     protected function init()
     {
+        if (file_exists(JPATH_ADMINISTRATOR."/components/com_zoo/config.php")) {
+            require_once JPATH_ADMINISTRATOR."/components/com_zoo/config.php";
+        }
+
+        if (file_exists(JPATH_ROOT . '/plugins/system/zlframework/config.php')) {
+            require_once JPATH_ROOT . '/plugins/system/zlframework/config.php';
+        }
+
         /** @var App $zoo */
         $zoo = App::getInstance('zoo');
 
@@ -50,7 +91,7 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
         ]);
 
         // only if not submission
-        if (!strstr(\Joomla\CMS\Factory::getApplication()->input->getCmd('controller'), 'submission')) {
+        if (!strstr(Factory::getApplication()->input->getCmd('controller'), 'submission')) {
             $zoo->event->dispatcher->connect('application:init', array(
                 $this,
                 'applicationAlgoliaConfiguration'

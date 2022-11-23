@@ -9,7 +9,6 @@ use Application;
 use Category;
 use ElementTextareaPro;
 use ItemRenderer;
-use JFolder;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -58,6 +57,13 @@ class AlgoliaSync
         $this->application = $type->getApplication();
 
         $this->zoo = $this->application->app;
+
+        /* Override route helper */
+        $this->zoo->loader->register('RouteHelper', 'root:plugins/system/zooalgolia/helpers/route.php');
+
+        /* Override menu helper */
+        $this->zoo->loader->register('MenuHelper', 'root:plugins/system/zooalgolia/helpers/menu.php');
+
         $this->renderer = $this->zoo->renderer->create('item', ['path' => $this->zoo->path]);
 
         if ($this->application->getParams()->get('global.config.algolia_app_id') && $this->application->getParams()->get('global.config.algolia_app_id')) {
@@ -68,7 +74,6 @@ class AlgoliaSync
         }
 
         if ($this->client && $this->application->getParams()->get('global.config.algolia_index_' . $type->identifier)) {
-            $this->index = $this->client->initIndex($this->application->getParams()->get('global.config.algolia_index_' . $type->identifier));
         }
 
         $this->loadRouterLanguageRules();
@@ -170,9 +175,9 @@ class AlgoliaSync
 
         $this->categories = $application->getCategoryTree();
         $data = [
-            'id'           => $item->id,
             'url'          => [],
             'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), $this->array_flatten(array_map(function ($id) {
+            'id'           => $item->id,
                 /** @var Category $category */
                 $category = $this->categories[$id] ?? null;
                 if (!$category) {
@@ -412,7 +417,7 @@ class AlgoliaSync
             $values = array_filter(array_map(function ($item) {
                 $value = $item['value'] ?? '';
                 return strlen($value) > 0 ? $value : null;
-            }, $element->data()));
+            }, $element->data() ?? []));
 
             if ($element->config->get('repeatable', false)) {
                 return $values;
@@ -464,36 +469,40 @@ class AlgoliaSync
                 []
             );
 
+            foreach (LanguageHelper::getContentLanguages() as $language) {
 
-            $menu_items = $zoo->system->application->getMenu('site')->getItems([
-                'component_id'
-            ], [
-                \JComponentHelper::getComponent('com_zoo')->id
-            ]) ?: [];
+                $app = CMSApplication::getInstance('site');
 
+                $menu_items = $app->getMenu('site')->getItems([
+                    'component_id',
+                    'language'
+                ], [
+                    \JComponentHelper::getComponent('com_zoo')->id,
+                    $language->lang_code
+                ]) ?: [];
 
-            /** @var MenuItem $menu_item */
-            foreach ($menu_items as $menu_item) {
-                /** @var Registry $menuItemParams */
-                $menuItemParams = $menu_item->getParams();
-                $menuItemLanguage = $menu_item->language;
+                /** @var MenuItem $menu_item */
+                foreach ($menu_items as $menu_item) {
+                    /** @var Registry $menuItemParams */
+                    $menuItemParams = $zoo->parameter->create($menu_item->getParams());
+                    $menuItemLanguage = $menu_item->language;
 
-                switch (@$menu_item->query['view']) {
-                    case 'frontpage':
-                        $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
-                        break;
-                    case 'category':
-                        $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
-                        break;
-                    case 'item':
-                        $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
-                        break;
-                    case 'submission':
-                        $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
-                        break;
+                    switch (@$menu_item->query['view']) {
+                        case 'frontpage':
+                            $this->menuItems['frontpage'][$menuItemParams->get('application')][$menuItemLanguage] = $menu_item;
+                            break;
+                        case 'category':
+                            $this->menuItems['category'][$menuItemParams->get('category')][$menuItemLanguage] = $menu_item;
+                            break;
+                        case 'item':
+                            $this->menuItems['item'][$menuItemParams->get('item_id')][$menuItemLanguage] = $menu_item;
+                            break;
+                        case 'submission':
+                            $this->menuItems[(@$menu_item->query['layout'] == 'submission' ? 'submission' : 'mysubmissions')][$menuItemParams->get('submission')][$menuItemLanguage] = $menu_item;
+                            break;
+                    }
                 }
             }
-
         }
 
         return @$this->menuItems[$type][$id][$lang] ?: @$this->menuItems[$type][$id]['*'];
@@ -701,7 +710,7 @@ class AlgoliaSync
         return $data;
     }
 
-    public function array_flatten(array $array): array
+    private function array_flatten(array $array): array
     {
         $return = [];
 
