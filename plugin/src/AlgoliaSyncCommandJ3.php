@@ -4,23 +4,18 @@ namespace Weble\ZOOAlgolia;
 
 use App;
 use Item;
-use Joomla\Console\Command\AbstractCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class AlgoliaSyncCommand extends AbstractCommand
+class AlgoliaSyncCommandJ3 extends Command
 {
-    // the name of the command (the part after "bin/console")
+// the name of the command (the part after "bin/console")
     protected static $defaultName = 'algolia:sync';
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    protected function configure(): void
+    protected function configure()
     {
         $this->setDescription('Import ZOO items into Algolia');
         $this->addOption('app', 'a', InputArgument::OPTIONAL, 'The id of the app to import types from');
@@ -28,9 +23,9 @@ class AlgoliaSyncCommand extends AbstractCommand
         $this->addOption('ids', null, InputArgument::OPTIONAL, 'The comma separated list of the ids of the items to import');
     }
 
-    protected function doExecute(InputInterface $input, OutputInterface $output): int
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
-        require_once(JPATH_BASE.'/plugins/system/zlframework/config.php');
+        require_once(JPATH_BASE . '/plugins/system/zlframework/config.php');
         require_once JPATH_SITE . '/plugins/system/zooalgolia/vendor/autoload.php';
 
         $zoo = App::getInstance('zoo');
@@ -68,8 +63,7 @@ class AlgoliaSyncCommand extends AbstractCommand
                     $items = $zoo->table->item->all(['conditions' => 'type = ' . $app_type->identifier . ' AND id IN ( ' . implode(",", $ids) . ')']);
                     $total = count($items);
                 } else {
-                    //$items = $zoo->table->item->findAll($application->id);
-                    $items =  $zoo->table->item->getByType($app_type->identifier, $application->id);
+                    $items = $zoo->table->item->getByType($app_type->identifier, $application->id);
                     $total = count($items);
                 }
 

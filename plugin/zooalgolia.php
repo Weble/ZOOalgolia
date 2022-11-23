@@ -4,9 +4,10 @@ defined('_JEXEC') or die('Restricted access');
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+use Joomla\CMS\Factory;
 use Weble\ZOOAlgolia\AlgoliaSync;
-use Weble\ZOOAlgolia\AlgoliaSyncCommand;
 use Joomla\Application\ApplicationEvents;
+use Weble\ZOOAlgolia\AlgoliaSyncCommandJ4;
 
 class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
 {
@@ -36,7 +37,7 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
 
     public function registerAlgoliaSyncCommand()
     {
-        $this->app->addCommand(new AlgoliaSyncCommand());
+        $this->app->addCommand(new AlgoliaSyncCommandJ4());
     }
 
     /**
@@ -72,7 +73,7 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
         ]);
 
         // only if not submission
-        if (!strstr(\Joomla\CMS\Factory::getApplication()->input->getCmd('controller'), 'submission')) {
+        if (!strstr(Factory::getApplication()->input->getCmd('controller'), 'submission')) {
             $zoo->event->dispatcher->connect('application:init', array(
                 $this,
                 'applicationAlgoliaConfiguration'
