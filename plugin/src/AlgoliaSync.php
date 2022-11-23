@@ -73,7 +73,8 @@ class AlgoliaSync
             );
         }
 
-        if ($this->client && $this->application->getParams()->get('global.config.algolia_index_' . $type->identifier)) {
+        if ($this->client && $this->application->getParams()->get('global.config.algolia_index_'. $type->identifier)) {
+            $this->index = $this->client->initIndex($this->application->getParams()->get('global.config.algolia_index_'. $type->identifier));
         }
 
         $this->loadRouterLanguageRules();
