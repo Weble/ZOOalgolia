@@ -50,6 +50,14 @@ class plgSystemZooAlgolia extends Joomla\CMS\Plugin\CMSPlugin
 
     protected function init()
     {
+        if (file_exists(JPATH_ADMINISTRATOR."/components/com_zoo/config.php")) {
+            require_once JPATH_ADMINISTRATOR."/components/com_zoo/config.php";
+        }
+
+        if (file_exists(JPATH_ROOT . '/plugins/system/zlframework/config.php')) {
+            require_once JPATH_ROOT . '/plugins/system/zlframework/config.php';
+        }
+
         /** @var App $zoo */
         $zoo = App::getInstance('zoo');
 

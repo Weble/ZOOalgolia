@@ -25,8 +25,13 @@ class AlgoliaSyncCommandJ3 extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        require_once(JPATH_BASE . '/plugins/system/zlframework/config.php');
-        require_once JPATH_SITE . '/plugins/system/zooalgolia/vendor/autoload.php';
+        if (file_exists(JPATH_ADMINISTRATOR."/components/com_zoo/config.php")) {
+            require_once JPATH_ADMINISTRATOR."/components/com_zoo/config.php";
+        }
+
+        if (file_exists(JPATH_ROOT . '/plugins/system/zlframework/config.php')) {
+            require_once JPATH_ROOT . '/plugins/system/zlframework/config.php';
+        }
 
         $zoo = App::getInstance('zoo');
 
