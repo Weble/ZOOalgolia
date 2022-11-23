@@ -24,6 +24,10 @@ If you have [JoomlaCommands](https://github.com/Weble/JoomlaCommands) installed,
 
 ```php bin/console algolia:sync {--app=[ID] --type=[type] --ids=1,2,3}```
 
+If you have **Joomla 4**, [JoomlaCommands](https://github.com/Weble/JoomlaCommands) is not required. Use native Joomla commands instead.
+
+````php cli/joomla.php algolia:sync````
+
 ## Build from source
 
 ```./build.sh```
