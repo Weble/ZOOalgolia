@@ -24,11 +24,11 @@ use Joomla\Registry\Registry;
 use Joomla\String\StringHelper;
 use stdClass;
 use Type;
-use PlgSystemLanguageFilter;
 
 class AlgoliaSync
 {
 
+    private static bool $routerRulesLoaded = false;
     private App $zoo;
     private ItemRenderer $renderer;
     private ?SearchClient $client = null;
@@ -523,8 +523,7 @@ class AlgoliaSync
         $menu_item_frontpage = $this->findMenuItem('frontpage', $item->application_id, $lang);
 
         // build item link
-        $langCode = $lang === 'en-GB' ? 'en' : 'it';
-        $link = $this->getLinkBase() . '&task=item&item_id=' . $item->id . '&lang=' . $langCode;
+        $link = $this->getLinkBase() . '&task=item&item_id=' . $item->id . '&lang=' . $lang;
         $categories = $item->getRelatedCategories(true);
         $primary_category = $item->getPrimaryCategory();
 
@@ -635,8 +634,7 @@ class AlgoliaSync
         $menu_item_frontpage = $this->findMenuItem('frontpage', $category->application_id, $lang);
 
         // build category link
-        $langCode = $lang === 'en-GB' ? 'en' : 'it';
-        $link = $this->getLinkBase() . '&task=category&category_id=' . $category->id . '&lang=' . $langCode;
+        $link = $this->getLinkBase() . '&task=category&category_id=' . $category->id . '&lang=' . $lang;
 
         $itemid = null;
         if ($menu_item = $this->findInCategoryPath($category, $lang)) {
@@ -724,8 +722,11 @@ class AlgoliaSync
 
     private function loadRouterLanguageRules(): void
     {
+        if (self::$routerRulesLoaded) {
+            return;
+        }
+
         $this->app = CMSApplication::getInstance('site');
-        $this->mode_sef = $this->app->get('sef', 0);
         $this->lang_codes = LanguageHelper::getLanguages('lang_code');
         $this->default_lang = ComponentHelper::getParams('com_languages')->get('site', 'en-GB');
         $this->current_lang = isset($this->lang_codes[$this->default_lang]) ? $this->default_lang : 'en-GB';
@@ -755,6 +756,8 @@ class AlgoliaSync
             $this,
             'parseRule'
         ), Router::PROCESS_BEFORE);
+
+        self::$routerRulesLoaded = true;
     }
 
     /**
