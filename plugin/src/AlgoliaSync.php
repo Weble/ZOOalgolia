@@ -726,6 +726,10 @@ class AlgoliaSync
             return;
         }
 
+        if (!PluginHelper::isEnabled('system', 'languagefilter')) {
+            return;
+        }
+
         $this->app = CMSApplication::getInstance('site');
         $this->lang_codes = LanguageHelper::getLanguages('lang_code');
         $this->default_lang = ComponentHelper::getParams('com_languages')->get('site', 'en-GB');
