@@ -471,16 +471,25 @@ class AlgoliaSync
             );
 
             foreach (LanguageHelper::getContentLanguages() as $language) {
-
                 $app = CMSApplication::getInstance('site');
 
-                $menu_items = $app->getMenu('site')->getItems([
-                    'component_id',
-                    'language'
-                ], [
-                    \JComponentHelper::getComponent('com_zoo')->id,
-                    $language->lang_code
-                ]) ?: [];
+                $menu_items = array_merge(
+                // Multi-lang
+                    $app->getMenu('site')->getItems([
+                        'component_id',
+                        'language'
+                    ], [
+                        \JComponentHelper::getComponent('com_zoo')->id,
+                        $language->lang_code
+                    ]) ?: [],
+
+                    // Single-lang "*"
+                    $app->getMenu('site')->getItems([
+                        'component_id',
+                    ], [
+                        \JComponentHelper::getComponent('com_zoo')->id,
+                    ]) ?: [],
+                );
 
                 /** @var MenuItem $menu_item */
                 foreach ($menu_items as $menu_item) {
@@ -726,10 +735,6 @@ class AlgoliaSync
             return;
         }
 
-        if (!PluginHelper::isEnabled('system', 'languagefilter')) {
-            return;
-        }
-
         $this->app = CMSApplication::getInstance('site');
         $this->lang_codes = LanguageHelper::getLanguages('lang_code');
         $this->default_lang = ComponentHelper::getParams('com_languages')->get('site', 'en-GB');
@@ -746,10 +751,14 @@ class AlgoliaSync
             'preprocessBuildRule'
         ], Router::PROCESS_BEFORE);
 
-        $router->attachBuildRule([
-            $this,
-            'buildRule'
-        ], Router::PROCESS_BEFORE);
+
+        if ((bool) (new Registry(PluginHelper::getPlugin('system', 'zooalgolia')->params))->get('prepend_language')) {
+            $router->attachBuildRule([
+                $this,
+                'buildRule'
+            ], Router::PROCESS_BEFORE);
+        }
+
         $router->attachBuildRule([
             $this,
             'postprocessSEFBuildRule'
