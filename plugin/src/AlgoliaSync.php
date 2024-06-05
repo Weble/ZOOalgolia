@@ -175,21 +175,31 @@ class AlgoliaSync
         }
 
         $this->categories = $application->getCategoryTree();
+
+        $relatedCategoryIds = $item->getRelatedCategoryIds();
+        $categoryIds = array_map(function($id) {
+            /** @var Category $category */
+            $category = $this->categories[$id] ?? null;
+            if (!$category) {
+                return [];
+            }
+
+            return array_map(function($parent) {
+                return $parent->id;
+            }, $category->getPathway());
+        }, $relatedCategoryIds);
+
+        $categoryIds = $this->array_flatten($categoryIds);
+        $categoryIds = array_merge($relatedCategoryIds, $categoryIds);
+        $categoryIds = array_unique(array_filter($categoryIds));
+        $categoryIds = array_map(function($id) {
+            return (int) $id;
+        }, $categoryIds);
+
         $data = [
             'id'  => $item->id,
             'url' => [],
-            'category_ids' => array_filter(array_merge($item->getRelatedCategoryIds(), $this->array_flatten(array_map(function($id) {
-                /** @var Category $category */
-                $category = $this->categories[$id] ?? null;
-                if (!$category) {
-                    return [];
-                }
-
-                return array_map(function($parent) {
-                    return $parent->id;
-                }, $category->getPathway());
-
-            }, $item->getRelatedCategoryIds()))))
+            'category_ids' => array_values($categoryIds),
         ];
 
         foreach (LanguageHelper::getContentLanguages() as $lang => $languageDetails) {
